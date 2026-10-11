@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Pawster
 
-## Getting Started
+Pawster is a foster portal for coordinating pet placements, weekly foster updates, supply requests, and future integrations with external shelter systems. The central domain entity is a `placement`, which represents a pet assigned to a foster for a period of time.
 
-First, run the development server:
+This repository is intentionally set up as a simple single-app Next.js project. API routes, server-side domain helpers, Supabase access, and UI live together in one application.
+
+## Tech Stack
+
+- Next.js App Router
+- TypeScript
+- Supabase PostgreSQL, Auth, and Storage
+- `@supabase/supabase-js`
+- `@supabase/ssr`
+- `zod`
+
+## Local Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Copy the example environment file and fill in local Supabase values:
+
+```bash
+cp .env.example .env.local
+```
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Required Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
 
-## Learn More
+Do not commit real secrets to Git.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```text
+src/
+  app/
+    api/
+      placements/
+      weekly-updates/
+      supply-requests/
+      integrations/
+        shelterluv/
+        twilio/
+    dashboard/
+    login/
+  components/
+    ui/
+    forms/
+    layout/
+  lib/
+    supabase/
+    auth/
+    placements/
+    weekly-updates/
+    supplies/
+    integrations/
+      shelterluv/
+      twilio/
+      email/
+  types/
+supabase/
+  migrations/
+tests/
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database Changes
 
-## Deploy on Vercel
+Use SQL migrations under `supabase/migrations` for schema changes. The initial migration creates profiles, pets, placements, weekly updates, and weekly update photos. RLS policies are not implemented yet.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Integrations
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Shelterluv, Twilio, and email integration code should stay isolated under `src/lib/integrations`. They are placeholders for now and should not introduce infrastructure dependencies until the integration boundaries are designed.
+
+## Quality Checks
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+```
