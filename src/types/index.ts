@@ -55,3 +55,20 @@ export type WeeklyUpdatePhoto = {
   status: string;
   createdAt: string;
 };
+
+export type CreatePetRequest = {
+  shelterluvAnimalId?: string | null;
+  name: string;
+  species: string;
+  breed?: string | null;
+  photoUrl?: string | null;
+  status: string;
+};
+
+export type GetPetsResponse = {
+  data: Pet[];
+};
+
+export type CreatePetResponse = {
+  data: Pet;
+};
