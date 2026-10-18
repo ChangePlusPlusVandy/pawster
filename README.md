@@ -1,4 +1,5 @@
 # Pawster
+HIIIIII -sarah
 
 Pawster is a foster portal for coordinating pet placements, weekly foster updates, supply requests, and future integrations with external shelter systems. The central domain entity is a `placement`, which represents a pet assigned to a foster for a period of time.
 
