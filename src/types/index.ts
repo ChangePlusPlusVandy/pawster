@@ -34,6 +34,15 @@ export type Placement = {
   updatedAt: string;
 };
 
+export type CreatePlacementInput = {
+  petId: string;
+  fosterId: string;
+  shelterluvPlacementId?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  status: string;
+};
+
 export type WeeklyUpdate = {
   id: string;
   placementId: string;
