@@ -55,3 +55,53 @@ export type WeeklyUpdatePhoto = {
   status: string;
   createdAt: string;
 };
+
+export type ProfileRole = "foster" | "staff" | "admin";
+
+// Request bodies
+
+export type CreatePetRequest = {
+  name: string;
+  species: string;
+  breed?: string | null;
+  photoUrl?: string | null;
+  status?: string;
+  shelterluvAnimalId?: string | null;
+};
+
+export type CreatePlacementRequest = {
+  petId: string;
+  fosterId: string;
+  startDate: string;
+  endDate?: string | null;
+  status?: string;
+  shelterluvPlacementId?: string | null;
+};
+
+export type CreateWeeklyUpdateRequest = {
+  placementId: string;
+  notes: string;
+  behaviorConcerns?: string | null;
+  medicalConcerns?: string | null;
+  needsSupplies?: boolean;
+};
+
+// Response bodies
+
+export type ApiSuccessResponse<T> = {
+  data: T;
+};
+
+export type ApiErrorResponse = {
+  error: {
+    message: string;
+    details?: Record<string, string[]>;
+  };
+};
+
+export type GetPetsResponse = ApiSuccessResponse<Pet[]>;
+export type CreatePetResponse = ApiSuccessResponse<Pet>;
+export type GetActivePlacementsResponse = ApiSuccessResponse<Placement[]>;
+export type CreatePlacementResponse = ApiSuccessResponse<Placement>;
+export type GetWeeklyUpdatesResponse = ApiSuccessResponse<WeeklyUpdate[]>;
+export type CreateWeeklyUpdateResponse = ApiSuccessResponse<WeeklyUpdate>;
