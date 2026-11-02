@@ -1,7 +1,17 @@
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
 
 create table public.profiles (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   auth_user_id uuid unique,
   shelterluv_person_id text,
   full_name text not null,
@@ -13,7 +23,7 @@ create table public.profiles (
 );
 
 create table public.pets (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   shelterluv_animal_id text unique,
   name text not null,
   species text not null,
@@ -25,7 +35,7 @@ create table public.pets (
 );
 
 create table public.placements (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   pet_id uuid not null references public.pets(id) on delete restrict,
   foster_id uuid not null references public.profiles(id) on delete restrict,
   shelterluv_placement_id text,
@@ -37,7 +47,7 @@ create table public.placements (
 );
 
 create table public.weekly_updates (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   placement_id uuid not null references public.placements(id) on delete cascade,
   submitted_by uuid not null references public.profiles(id) on delete restrict,
   notes text not null,
@@ -51,7 +61,7 @@ create table public.weekly_updates (
 );
 
 create table public.weekly_update_photos (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   weekly_update_id uuid not null references public.weekly_updates(id) on delete cascade,
   storage_path text not null,
   status text not null,
@@ -62,3 +72,18 @@ create index placements_pet_id_idx on public.placements(pet_id);
 create index placements_foster_id_idx on public.placements(foster_id);
 create index weekly_updates_placement_id_idx on public.weekly_updates(placement_id);
 create index weekly_update_photos_weekly_update_id_idx on public.weekly_update_photos(weekly_update_id);
+
+create trigger set_profiles_updated_at
+before update on public.profiles
+for each row
+execute function public.set_updated_at();
+
+create trigger set_pets_updated_at
+before update on public.pets
+for each row
+execute function public.set_updated_at();
+
+create trigger set_placements_updated_at
+before update on public.placements
+for each row
+execute function public.set_updated_at();
