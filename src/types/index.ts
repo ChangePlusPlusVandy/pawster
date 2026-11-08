@@ -65,6 +65,51 @@ export type WeeklyUpdatePhoto = {
   createdAt: string;
 };
 
+export type SupplyItem = {
+  id: string;
+  name: string;
+  category: string;
+  unitLabel: string;
+  createdAt: string;
+};
+
+export type SupplyRequestStatus = "pending" | "fulfilled" | "cancelled";
+
+export type FulfillmentMethod = "pickup" | "delivery";
+
+export type SupplyRequestItem = {
+  id: string;
+  requestId: string;
+  supplyItemId: string | null;
+  customName: string | null;
+  quantity: number;
+  supplyItem?: Pick<SupplyItem, "id" | "name" | "category" | "unitLabel"> | null;
+};
+
+export type SupplyRequest = {
+  id: string;
+  checkInId: string;
+  fosterId: string;
+  placementId: string | null;
+  status: SupplyRequestStatus;
+  fulfillmentMethod: FulfillmentMethod;
+  notesToStaff: string | null;
+  fulfilledAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: SupplyRequestItem[];
+};
+
+export type WeeklyCheckIn = {
+  id: string;
+  fosterId: string;
+  needsSupplies: boolean;
+  comments: string | null;
+  weekOf: string;
+  createdAt: string;
+};
+
 export type CreatePetRequest = {
   shelterluvAnimalId?: string | null;
   name: string;
