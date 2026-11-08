@@ -458,7 +458,8 @@ export function SupplyRequestForm({
         </h2>
         {initialRequests.length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
-            You have not submitted any supply requests yet.
+            No personal request history yet. After auth lands, verified fosters
+            will see and cancel their own pending requests here.
           </p>
         ) : (
           <ul className="flex flex-col gap-3">

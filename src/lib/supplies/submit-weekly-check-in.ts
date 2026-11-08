@@ -19,14 +19,8 @@ export async function submitWeeklyCheckIn(
 
   const data = parsed.data;
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
 
-  if (!user) {
-    throw new Error("You must be signed in to submit a check-in.");
-  }
-
+  // TEMP (until AUTH-01): allow anonymous submit; RPC stores foster_id as null.
   const rpcItems = data.needsSupplies
     ? data.items.map((item) => {
         if ("supplyItemId" in item && item.supplyItemId) {

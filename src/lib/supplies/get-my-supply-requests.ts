@@ -25,7 +25,7 @@ type SupplyRequestItemRow = {
 type SupplyRequestRow = {
   id: string;
   check_in_id: string;
-  foster_id: string;
+  foster_id: string | null;
   placement_id: string | null;
   status: SupplyRequestStatus;
   fulfillment_method: FulfillmentMethod;

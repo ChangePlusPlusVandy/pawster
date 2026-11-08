@@ -89,7 +89,7 @@ export type SupplyRequestItem = {
 export type SupplyRequest = {
   id: string;
   checkInId: string;
-  fosterId: string;
+  fosterId: string | null;
   placementId: string | null;
   status: SupplyRequestStatus;
   fulfillmentMethod: FulfillmentMethod;
@@ -103,7 +103,7 @@ export type SupplyRequest = {
 
 export type WeeklyCheckIn = {
   id: string;
-  fosterId: string;
+  fosterId: string | null;
   needsSupplies: boolean;
   comments: string | null;
   weekOf: string;

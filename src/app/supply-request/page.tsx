@@ -23,6 +23,10 @@ export default function SupplyRequestPage() {
             Weekly check-in: tell us if you need supplies, and we will track
             your request.
           </p>
+          <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+            This is currently available to everyone to add. In the future, auth
+            will be present and only verified fosters can submit requests.
+          </p>
         </div>
 
         <Suspense
