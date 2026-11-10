@@ -1,29 +1,56 @@
--- Keep Pawster profile rows linked to Supabase Auth users. New email sign-ins
--- receive a temporary display name based on the email local part and the
--- default foster role; onboarding can replace the name later.
+-- Link profiles to Supabase Auth accounts. New email sign-ins get a temporary
+-- display name based on the email local part and the default foster role.
+-- Existing profiles without an Auth account remain available to be claimed
+-- when that person signs in for the first time.
 
 alter table public.profiles
   alter column role set default 'foster';
 
--- Link existing profiles by email when possible. Keep their existing name and
--- role so this migration does not overwrite manually maintained profile data.
-update public.profiles as profile
-set auth_user_id = auth_user.id
-from auth.users as auth_user
-where (
-    profile.auth_user_id is null
-    or not exists (
-      select 1
-      from auth.users as linked_user
-      where linked_user.id = profile.auth_user_id
+-- Attach existing profiles to Auth users with matching email addresses.
+-- Choose at most one profile for each Auth user to preserve the unique link.
+with matching_profiles as (
+  select
+    profile.id as profile_id,
+    auth_user.id as auth_user_id,
+    row_number() over (
+      partition by auth_user.id
+      order by profile.created_at, profile.id
+    ) as match_number
+  from public.profiles as profile
+  join auth.users as auth_user
+    on lower(btrim(profile.email)) = lower(btrim(auth_user.email))
+  where (
+      profile.auth_user_id is null
+      or not exists (
+        select 1
+        from auth.users as linked_user
+        where linked_user.id = profile.auth_user_id
+      )
     )
-  )
-  and profile.email is not null
-  and lower(btrim(profile.email)) = lower(btrim(auth_user.email));
+    and not exists (
+      select 1
+      from public.profiles as already_linked
+      where already_linked.auth_user_id = auth_user.id
+    )
+)
+update public.profiles as profile
+set auth_user_id = matching_profiles.auth_user_id
+from matching_profiles
+where matching_profiles.match_number = 1
+  and profile.id = matching_profiles.profile_id;
 
--- Backfill profiles for existing email Auth accounts. New accounts are handled
--- by the trigger below. The unique auth_user_id constraint makes this safe to
--- run if a profile already exists for the account.
+-- Clear stale IDs that do not refer to an Auth account. The profile data is
+-- retained and can be claimed by email when the person signs in.
+update public.profiles as profile
+set auth_user_id = null
+where profile.auth_user_id is not null
+  and not exists (
+    select 1
+    from auth.users as auth_user
+    where auth_user.id = profile.auth_user_id
+  );
+
+-- Create profiles for existing email Auth users that do not already have one.
 insert into public.profiles (auth_user_id, full_name, email, role)
 select
   auth_user.id,
@@ -32,29 +59,12 @@ select
   'foster'
 from auth.users as auth_user
 where auth_user.email is not null
-on conflict (auth_user_id) do update
-set email = excluded.email;
-
-do $$
-begin
-  if exists (
+  and not exists (
     select 1
     from public.profiles as profile
-    where profile.auth_user_id is null
-       or not exists (
-         select 1
-         from auth.users as auth_user
-         where auth_user.id = profile.auth_user_id
-       )
-  ) then
-    raise exception
-      'Cannot require profile auth links: map existing profiles to auth.users by email or remove obsolete profiles first';
-  end if;
-end;
-$$;
-
-alter table public.profiles
-  alter column auth_user_id set not null;
+    where profile.auth_user_id = auth_user.id
+  )
+on conflict (auth_user_id) do nothing;
 
 do $$
 begin
@@ -81,6 +91,7 @@ set search_path = ''
 as $$
 declare
   temporary_name text;
+  matched_profile_id uuid;
 begin
   if new.email is null or btrim(new.email) = '' then
     raise exception 'Pawster accounts require an email address';
@@ -91,10 +102,38 @@ begin
     'New Foster'
   );
 
+  -- Keep an already-linked profile intact and sync its email.
+  update public.profiles
+  set email = new.email
+  where auth_user_id = new.id;
+
+  if found then
+    return new;
+  end if;
+
+  -- Reuse a roster profile with the same email, preserving its profile ID,
+  -- name, role, and any foreign-key references to it.
+  update public.profiles
+  set
+    auth_user_id = new.id,
+    email = new.email,
+    full_name = coalesce(nullif(btrim(full_name), ''), temporary_name)
+  where id = (
+    select profile.id
+    from public.profiles as profile
+    where profile.auth_user_id is null
+      and lower(btrim(profile.email)) = lower(btrim(new.email))
+    order by profile.created_at, profile.id
+    limit 1
+  )
+  returning id into matched_profile_id;
+
+  if matched_profile_id is not null then
+    return new;
+  end if;
+
   insert into public.profiles (auth_user_id, full_name, email, role)
-  values (new.id, temporary_name, new.email, 'foster')
-  on conflict (auth_user_id) do update
-    set email = excluded.email;
+  values (new.id, temporary_name, new.email, 'foster');
 
   return new;
 end;
