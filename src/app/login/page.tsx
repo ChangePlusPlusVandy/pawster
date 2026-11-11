@@ -5,6 +5,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,13 +25,31 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setMessage("Something went wrong. Please try again.");
+      setMessage(error.message);
       setLoading(false);
       return;
     }
 
     setMessage("Check your email for a sign-in link.");
     setLoading(false);
+  }
+
+  async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setLoading(true);
+    setMessage("");
+
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
+      return;
+    }
+
+    window.location.assign("/");
   }
 
   return (
@@ -53,7 +72,28 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {message && <p>{message}</p>}
+      {process.env.NODE_ENV !== "production" && (
+        <section>
+          <h2>Developer password login</h2>
+          <form onSubmit={handlePasswordSubmit}>
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            <button type="submit" disabled={loading}>
+              {loading ? "Signing in..." : "Sign in with password"}
+            </button>
+          </form>
+        </section>
+      )}
+
+      {message && <p role="status">{message}</p>}
     </main>
   );
 }
