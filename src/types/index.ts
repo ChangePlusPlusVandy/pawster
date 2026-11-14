@@ -78,6 +78,10 @@ export type CreatePlacementRequest = {
   shelterluvPlacementId?: string | null;
 };
 
+export type ClosePlacementRequest = {
+  endDate: string
+}
+
 export type CreateWeeklyUpdateRequest = {
   placementId: string;
   notes: string;

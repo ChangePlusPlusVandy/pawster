@@ -27,6 +27,14 @@ export const createPlacementSchema = z
     path: ["endDate"],
   });
 
+export const placementParamsSchema = z.object({
+  id: z.uuid("id must be a valid UUID"),
+});
+
+export const closePlacementSchema = z.object({
+  endDate: z.iso.date("endDate must be a YYYY-MM-DD date"),
+});
+
 export const createWeeklyUpdateSchema = z.object({
   placementId: z.uuid("placementId must be a valid UUID"),
   notes: z.string().trim().min(1, "notes is required"),
