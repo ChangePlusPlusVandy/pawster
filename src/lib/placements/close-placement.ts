@@ -2,7 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPlacement, type PlacementRow } from "@/lib/supabase/mappers";
 import type { ClosePlacementRequest, Placement } from "@/types";
 import { getPlacement } from "@/lib/placements/get-placement";
-import { notFound, badRequest } from "@/lib/api/http";
+import { notFound } from "@/lib/api/http";
+import { checkClosePlacement } from "@/lib/placements/placement-rules";
+import { todayInShelterTimeZone } from "@/lib/placements/today";
 
 export type ClosePlacementInput = ClosePlacementRequest;
 
@@ -17,14 +19,15 @@ export async function closePlacement(
         throw notFound("Placement not found.");
     }
 
-    // 2. Validate
-    const startDate = new Date(existing.startDate).getTime();
-    const endDate = new Date(input.endDate).getTime();
+    // 2. Validate against the close rules
+    const decision = checkClosePlacement(
+        existing,
+        input.endDate,
+        todayInShelterTimeZone(),
+    );
 
-    if(startDate >= endDate) {
-        throw badRequest("Invalid request body.",   {
-            endDate: ["End date must be after start date."],
-        });
+    if(decision === "noop") {
+        return existing;
     }
 
     // 3. Update and return result

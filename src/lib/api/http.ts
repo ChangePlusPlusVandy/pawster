@@ -20,6 +20,8 @@ export const forbidden = (message = "You do not have access to this resource.") 
   new ApiError(403, message);
 export const notFound = (message = "Resource not found.") =>
   new ApiError(404, message);
+export const conflict = (message: string) =>
+  new ApiError(409, message);
 
 export function ok<T>(data: T) {
   return Response.json({ data }, { status: 200 });
