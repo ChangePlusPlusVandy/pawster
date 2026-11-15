@@ -82,6 +82,10 @@ export type ClosePlacementRequest = {
   endDate: string
 }
 
+export type EditPlacementRequest = {
+  endDate: string
+}
+
 export type CreateWeeklyUpdateRequest = {
   placementId: string;
   notes: string;
