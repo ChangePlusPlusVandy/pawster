@@ -3,11 +3,15 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
+export const instant = false;
+
 async function getVideoProgress() {
   const supabase = await createSupabaseServerClient();
 
   const [{ count: total }, { data: progress }] = await Promise.all([
-    supabase.from("video_resources").select("*", { count: "exact", head: true }),
+    supabase
+      .from("video_resources")
+      .select("*", { count: "exact", head: true }),
     supabase.rpc("get_resource_progress"),
   ]);
 
@@ -51,9 +55,12 @@ export default async function DashboardPage() {
         >
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Training Videos</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Training Videos
+              </h2>
               <p className="text-sm text-gray-500 mt-0.5">
-                Watch required videos and read articles before your first foster placement.
+                Watch required videos and read articles before your first foster
+                placement.
               </p>
             </div>
             {allDone ? (
