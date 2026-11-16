@@ -1,3 +1,5 @@
+import type { WeeklyUpdateAnswersV1 } from "@/lib/weekly-updates/validation";
+
 export type Profile = {
   id: string;
   authUserId: string | null;
@@ -55,7 +57,14 @@ export type WeeklyUpdate = {
   submittedAt: string;
   reviewedAt: string | null;
   reviewedBy: string | null;
+  questionnaireVersion: number;
+  answers: WeeklyUpdateAnswers;
 };
+
+// The foster's original questionnaire answers. When a new questionnaire
+// version is added, include its answers type here (for example
+// WeeklyUpdateAnswersV1 | WeeklyUpdateAnswersV2).
+export type WeeklyUpdateAnswers = WeeklyUpdateAnswersV1;
 
 export type WeeklyUpdatePhoto = {
   id: string;
