@@ -16,6 +16,9 @@ async function UserSessionStatus() {
   return user ? (
     <div className="flex flex-col items-start gap-3">
       <p role="status">You’re logged in as {user.email}.</p>
+      <Link className="underline" href="/dashboard">
+        Go to Dashboard
+      </Link>
       <LogoutButton />
     </div>
   ) : (
