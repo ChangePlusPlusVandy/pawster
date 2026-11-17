@@ -39,9 +39,7 @@ export async function submitWeeklyCheckIn(
   const { data: result, error } = await supabase.rpc("submit_weekly_check_in", {
     p_needs_supplies: data.needsSupplies,
     p_comments: data.comments || null,
-    p_fulfillment_method: data.needsSupplies
-      ? data.fulfillmentMethod
-      : null,
+    p_fulfillment_method: data.fulfillmentMethod,
     p_notes_to_staff: data.needsSupplies ? data.notesToStaff || null : null,
     p_items: rpcItems,
   });

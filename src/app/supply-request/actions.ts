@@ -9,7 +9,12 @@ import {
 } from "@/lib/supplies/validation";
 
 export type ActionResult =
-  | { ok: true; message: string }
+  | {
+      ok: true;
+      message: string;
+      requestId?: string | null;
+      fulfillmentMethod?: "pickup" | null;
+    }
   | { ok: false; message: string };
 
 export async function submitWeeklyCheckInAction(
@@ -31,6 +36,8 @@ export async function submitWeeklyCheckInAction(
       message: result.requestId
         ? "Supply request submitted. Thanks for checking in."
         : "Check-in saved. No supplies needed this time.",
+      requestId: result.requestId,
+      fulfillmentMethod: parsed.data.fulfillmentMethod,
     };
   } catch (error) {
     return {

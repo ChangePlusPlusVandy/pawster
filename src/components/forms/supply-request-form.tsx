@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import {
@@ -12,7 +13,7 @@ import {
   NOTES_MAX,
   submitWeeklyCheckInSchema,
 } from "@/lib/supplies/validation";
-import type { FulfillmentMethod, SupplyItem, SupplyRequest } from "@/types";
+import type { SupplyItem, SupplyRequest } from "@/types";
 
 type NeedsSuppliesAnswer = "yes" | "no" | null;
 
@@ -77,11 +78,12 @@ export function SupplyRequestForm({
   const [needsSupplies, setNeedsSupplies] = useState<NeedsSuppliesAnswer>(null);
   const [comments, setComments] = useState("");
   const [notesToStaff, setNotesToStaff] = useState("");
-  const [fulfillmentMethod, setFulfillmentMethod] =
-    useState<FulfillmentMethod | "">("");
   const [rows, setRows] = useState<FormRow[]>([createRow()]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [scheduleRequestId, setScheduleRequestId] = useState<string | null>(
+    null,
+  );
   const [isPending, startTransition] = useTransition();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
@@ -104,7 +106,6 @@ export function SupplyRequestForm({
     setNeedsSupplies(keepAnswer);
     setComments("");
     setNotesToStaff("");
-    setFulfillmentMethod("");
     setRows([createRow()]);
   }
 
@@ -118,6 +119,7 @@ export function SupplyRequestForm({
     event.preventDefault();
     setError(null);
     setSuccess(null);
+    setScheduleRequestId(null);
 
     if (needsSupplies === null) {
       setError("Please answer whether you need supplies.");
@@ -127,8 +129,6 @@ export function SupplyRequestForm({
     const payload = {
       needsSupplies: needsSupplies === "yes",
       comments: comments.trim() || null,
-      fulfillmentMethod:
-        needsSupplies === "yes" ? fulfillmentMethod || null : null,
       notesToStaff: needsSupplies === "yes" ? notesToStaff.trim() || null : null,
       items:
         needsSupplies === "yes"
@@ -164,6 +164,12 @@ export function SupplyRequestForm({
       }
 
       setSuccess(result.message);
+      if (
+        result.requestId &&
+        result.fulfillmentMethod === "pickup"
+      ) {
+        setScheduleRequestId(result.requestId);
+      }
       resetForm();
       router.refresh();
     });
@@ -363,35 +369,10 @@ export function SupplyRequestForm({
               </button>
             </div>
 
-            <fieldset className="flex flex-col gap-3">
-              <legend className="text-base font-medium text-zinc-900 dark:text-zinc-100">
-                Pickup or delivery?
-              </legend>
-              <div className="flex gap-3">
-                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-zinc-200 px-4 py-2 dark:border-zinc-700">
-                  <input
-                    type="radio"
-                    name="fulfillmentMethod"
-                    value="pickup"
-                    checked={fulfillmentMethod === "pickup"}
-                    onChange={() => setFulfillmentMethod("pickup")}
-                    required
-                  />
-                  Pickup
-                </label>
-                <label className="flex cursor-pointer items-center gap-2 rounded-md border border-zinc-200 px-4 py-2 dark:border-zinc-700">
-                  <input
-                    type="radio"
-                    name="fulfillmentMethod"
-                    value="delivery"
-                    checked={fulfillmentMethod === "delivery"}
-                    onChange={() => setFulfillmentMethod("delivery")}
-                    required
-                  />
-                  Delivery
-                </label>
-              </div>
-            </fieldset>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Supplies are pickup only. After you submit, you can schedule a
+              pickup time.
+            </p>
 
             <label className="flex flex-col gap-1 text-sm">
               <span className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -444,12 +425,22 @@ export function SupplyRequestForm({
       ) : null}
 
       {success ? (
-        <p
+        <div
           role="status"
           className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100"
         >
-          {success}
-        </p>
+          <p>{success}</p>
+          {scheduleRequestId ? (
+            <p className="mt-2">
+              <Link
+                href={`/supply-request/${scheduleRequestId}/schedule`}
+                className="font-medium underline underline-offset-2"
+              >
+                Schedule pickup →
+              </Link>
+            </p>
+          ) : null}
+        </div>
       ) : null}
 
       <section className="flex flex-col gap-4">
@@ -477,20 +468,29 @@ export function SupplyRequestForm({
                   </p>
                   <p className="capitalize text-zinc-500">
                     Status: {request.status}
-                    {" · "}
-                    {request.fulfillmentMethod}
+                    {" · pickup"}
                   </p>
                 </div>
-                {request.status === "pending" ? (
-                  <button
-                    type="button"
-                    disabled={isPending && cancellingId === request.id}
-                    onClick={() => handleCancel(request.id)}
-                    className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
-                  >
-                    {cancellingId === request.id ? "Cancelling…" : "Cancel"}
-                  </button>
-                ) : null}
+                <div className="flex gap-2">
+                  {request.status === "pending" ? (
+                    <Link
+                      href={`/supply-request/${request.id}/schedule`}
+                      className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                    >
+                      Schedule
+                    </Link>
+                  ) : null}
+                  {request.status === "pending" ? (
+                    <button
+                      type="button"
+                      disabled={isPending && cancellingId === request.id}
+                      onClick={() => handleCancel(request.id)}
+                      className="self-start rounded-md border border-zinc-300 px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-900"
+                    >
+                      {cancellingId === request.id ? "Cancelling…" : "Cancel"}
+                    </button>
+                  ) : null}
+                </div>
               </li>
             ))}
           </ul>
