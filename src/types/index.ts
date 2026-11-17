@@ -135,3 +135,18 @@ export type GetPetsResponse = {
 export type CreatePetResponse = {
   data: Pet;
 };
+
+export type ClosePlacementRequest = {
+  endDate: string;
+};
+
+export type EditPlacementRequest = {
+  endDate: string;
+};
+
+export type ApiErrorResponse = {
+  error: {
+    message: string;
+    details?: Record<string, string[]>;
+  };
+};
