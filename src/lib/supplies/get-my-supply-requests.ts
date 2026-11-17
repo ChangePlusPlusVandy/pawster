@@ -88,11 +88,8 @@ export async function getMySupplyRequests(): Promise<SupplyRequest[]> {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return [];
-  }
-
-  const { data, error } = await supabase
+  // TEMP until AUTH-01: when signed out, show recent requests so schedule links work.
+  let query = supabase
     .from("supply_requests")
     .select(
       `
@@ -122,8 +119,14 @@ export async function getMySupplyRequests(): Promise<SupplyRequest[]> {
       )
     `,
     )
-    .eq("foster_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (user) {
+    query = query.eq("foster_id", user.id);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new Error(error.message);

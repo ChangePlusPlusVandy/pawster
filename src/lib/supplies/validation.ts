@@ -56,7 +56,6 @@ export const submitWeeklyCheckInSchema = z
       .max(COMMENTS_MAX, `Comments must be ${COMMENTS_MAX} characters or fewer`)
       .optional()
       .nullable(),
-    fulfillmentMethod: z.enum(["pickup", "delivery"]).optional().nullable(),
     notesToStaff: z
       .string()
       .trim()
@@ -75,14 +74,6 @@ export const submitWeeklyCheckInSchema = z
         });
       }
       return;
-    }
-
-    if (!data.fulfillmentMethod) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Choose pickup or delivery",
-        path: ["fulfillmentMethod"],
-      });
     }
 
     if (data.items.length < 1) {
@@ -106,7 +97,12 @@ export const submitWeeklyCheckInSchema = z
         seen.add(item.supplyItemId);
       }
     });
-  });
+  })
+  .transform((data) => ({
+    ...data,
+    // Supplies are pickup-only.
+    fulfillmentMethod: data.needsSupplies ? ("pickup" as const) : null,
+  }));
 
 export type SubmitWeeklyCheckInInput = z.infer<typeof submitWeeklyCheckInSchema>;
 export type SupplyRequestItemInput = z.infer<typeof supplyRequestItemSchema>;

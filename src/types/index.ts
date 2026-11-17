@@ -84,7 +84,7 @@ export type SupplyItem = {
 
 export type SupplyRequestStatus = "pending" | "fulfilled" | "cancelled";
 
-export type FulfillmentMethod = "pickup" | "delivery";
+export type FulfillmentMethod = "pickup";
 
 export type SupplyRequestItem = {
   id: string;
@@ -117,6 +117,46 @@ export type WeeklyCheckIn = {
   comments: string | null;
   weekOf: string;
   createdAt: string;
+};
+
+export type AppointmentSlotStatus = "open" | "held" | "booked" | "cancelled";
+
+export type AppointmentSlot = {
+  id: string;
+  createdBy: string | null;
+  startsAt: string;
+  endsAt: string;
+  status: AppointmentSlotStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SchedulingRequestStatus = "pending" | "confirmed" | "cancelled";
+
+export type SchedulingMode = "slot_pick" | "foster_proposal";
+
+export type SchedulingProposalWindow = {
+  id: string;
+  schedulingRequestId: string;
+  day: string;
+  startTime: string;
+  endTime: string;
+};
+
+export type SchedulingRequest = {
+  id: string;
+  supplyRequestId: string;
+  fosterId: string | null;
+  status: SchedulingRequestStatus;
+  mode: SchedulingMode;
+  selectedSlotId: string | null;
+  confirmedStartsAt: string | null;
+  confirmedEndsAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  selectedSlot?: AppointmentSlot | null;
+  windows: SchedulingProposalWindow[];
 };
 
 export type CreatePetRequest = {
