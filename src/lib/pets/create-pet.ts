@@ -1,35 +1,35 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-import { badRequest } from "@/lib/api/http";
-import { isUniqueViolation } from "@/lib/supabase/errors";
-import { mapPet, type PetRow } from "@/lib/supabase/mappers";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { CreatePetRequest, Pet } from "@/types";
 
-export type CreatePetInput = CreatePetRequest;
+export async function createPet(input: CreatePetRequest): Promise<Pet> {
+  const supabase = await createSupabaseServerClient();
 
-export async function createPet(
-  supabase: SupabaseClient,
-  input: CreatePetInput,
-): Promise<Pet> {
   const { data, error } = await supabase
     .from("pets")
     .insert({
+      shelterluv_animal_id: input.shelterluvAnimalId ?? null,
       name: input.name,
       species: input.species,
       breed: input.breed ?? null,
       photo_url: input.photoUrl ?? null,
-      status: input.status ?? "available",
-      shelterluv_animal_id: input.shelterluvAnimalId ?? null,
+      status: input.status,
     })
-    .select("*")
-    .single<PetRow>();
+    .select()
+    .single();
 
   if (error) {
-    if (isUniqueViolation(error)) {
-      throw badRequest("A pet with this shelterluvAnimalId already exists.");
-    }
-    throw error;
+    throw new Error(error.message);
   }
 
-  return mapPet(data);
+  return {
+    id: data.id,
+    shelterluvAnimalId: data.shelterluv_animal_id,
+    name: data.name,
+    species: data.species,
+    breed: data.breed,
+    photoUrl: data.photo_url,
+    status: data.status,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+  };
 }

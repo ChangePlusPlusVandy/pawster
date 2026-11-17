@@ -1,33 +1,24 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { Pet } from "@/types";
 
-import { isStaff } from "@/lib/auth/get-current-profile";
-import { getFosterPlacementIds } from "@/lib/placements/get-foster-placement-ids";
-import { mapPet, type PetRow } from "@/lib/supabase/mappers";
-import type { Pet, Profile } from "@/types";
+export async function getPets(): Promise<Pet[]> {
+  const supabase = await createSupabaseServerClient();
 
-// Staff see every pet; fosters only see pets they have been placed with.
-// TODO: Mirror this rule in Supabase RLS.
-export async function getPets(
-  supabase: SupabaseClient,
-  profile: Profile,
-): Promise<Pet[]> {
-  let query = supabase.from("pets").select("*").order("name");
-
-  if (!isStaff(profile)) {
-    const { petIds } = await getFosterPlacementIds(supabase, profile.id);
-
-    if (petIds.length === 0) {
-      return [];
-    }
-
-    query = query.in("id", petIds);
-  }
-
-  const { data, error } = await query.returns<PetRow[]>();
+  const { data, error } = await supabase.from("pets").select("*");
 
   if (error) {
-    throw error;
+    throw new Error(error.message);
   }
 
-  return data.map(mapPet);
+  return data.map((pet) => ({
+    id: pet.id,
+    shelterluvAnimalId: pet.shelterluv_animal_id,
+    name: pet.name,
+    species: pet.species,
+    breed: pet.breed,
+    photoUrl: pet.photo_url,
+    status: pet.status,
+    createdAt: pet.created_at,
+    updatedAt: pet.updated_at,
+  }));
 }

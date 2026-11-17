@@ -1,14 +1,16 @@
 import {
   errorResponse,
+  forbidden,
   ok,
   parseJsonBody,
+  unauthenticated,
 } from "@/lib/api/http";
 import {
   editPlacementSchema,
   parseWith,
   placementParamsSchema,
 } from "@/lib/api/validation";
-import { getCurrentProfile, requireStaff } from "@/lib/auth/get-current-profile";
+import { requireStaff } from "@/lib/auth/require-staff";
 import { editPlacement } from "@/lib/placements/edit-placement";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -19,9 +21,14 @@ export async function PATCH(
 ) {
   try {
     const { id } = parseWith(placementParamsSchema, await params);
+    const auth = await requireStaff();
+    if (!auth.authorized) {
+      throw auth.reason === "unauthenticated"
+        ? unauthenticated()
+        : forbidden("Only shelter staff can perform this action.");
+    }
+
     const supabase = await createSupabaseServerClient();
-    const profile = await getCurrentProfile(supabase);
-    requireStaff(profile);
 
     const input = parseWith(editPlacementSchema, await parseJsonBody(request));
     const placement = await editPlacement(supabase, id, input);

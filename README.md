@@ -35,15 +35,28 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Required Environment Variables
+## Environment Variables
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
 ```
 
-Do not commit real secrets to Git.
+The Supabase URL and anon key are public values used by the browser client. Never put a service-role key or other private credential in a `NEXT_PUBLIC_` variable. Add private credentials only if server-side code needs them, and keep them server-only. `.env.example` is a safe template; keep real local values in `.env.local` and never commit them.
+
+## CI and Tests
+
+GitHub Actions runs lint, TypeScript checks, and unit tests for pushes and pull requests. These checks do not need Supabase credentials. Add any future integration-test credentials as GitHub Actions secrets and pass them only to the test job that needs them.
+
+To require these checks before merging to `main`, enable branch protection for `main` in GitHub and require the `CI / checks` status check.
+
+Run the checks locally with:
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+```
 
 ## Project Structure
 
@@ -91,6 +104,7 @@ Shelterluv, Twilio, and email integration code should stay isolated under `src/l
 
 ```bash
 npm run lint
-npx tsc --noEmit
+npm run typecheck
+npm test
 npm run build
 ```

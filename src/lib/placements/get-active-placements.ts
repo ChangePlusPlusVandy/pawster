@@ -1,30 +1,27 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { Placement } from "@/types";
 
-import { isStaff } from "@/lib/auth/get-current-profile";
-import { mapPlacement, type PlacementRow } from "@/lib/supabase/mappers";
-import type { Placement, Profile } from "@/types";
+export async function getActivePlacements(): Promise<Placement[]> {
+  const supabase = await createSupabaseServerClient();
 
-// Staff see every active placement; fosters only see their own.
-// TODO: Mirror this rule in Supabase RLS.
-export async function getActivePlacements(
-  supabase: SupabaseClient,
-  profile: Profile,
-): Promise<Placement[]> {
-  let query = supabase
+  const { data, error } = await supabase
     .from("placements")
     .select("*")
-    .eq("status", "active")
-    .order("start_date", { ascending: false });
-
-  if (!isStaff(profile)) {
-    query = query.eq("foster_id", profile.id);
-  }
-
-  const { data, error } = await query.returns<PlacementRow[]>();
+    .eq("status", "active");
 
   if (error) {
-    throw error;
+    throw new Error(`Failed to get active placements: ${error.message}`);
   }
 
-  return data.map(mapPlacement);
+  return data.map((placement) => ({
+    id: placement.id,
+    petId: placement.pet_id,
+    fosterId: placement.foster_id,
+    shelterluvPlacementId: placement.shelterluv_placement_id,
+    startDate: placement.start_date,
+    endDate: placement.end_date,
+    status: placement.status,
+    createdAt: placement.created_at,
+    updatedAt: placement.updated_at,
+  }));
 }

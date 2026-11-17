@@ -1,48 +1,57 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
-import { forbidden, unauthenticated } from "@/lib/api/http";
-import { mapProfile, type ProfileRow } from "@/lib/supabase/mappers";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Profile } from "@/types";
 
-const STAFF_ROLES = new Set(["staff", "admin"]);
+type ProfileRow = {
+  id: string;
+  auth_user_id: string | null;
+  shelterluv_person_id: string | null;
+  full_name: string;
+  email: string;
+  phone: string | null;
+  role: string;
+  created_at: string;
+  updated_at: string;
+};
 
-export function isStaff(profile: Profile) {
-  return STAFF_ROLES.has(profile.role);
-}
+export async function getCurrentProfile(): Promise<Profile | null> {
+  const supabase = await createSupabaseServerClient();
 
-// Resolves the signed-in Supabase user to their Pawster profile.
-// Throws 401 when there is no session and 403 when the user has no profile.
-export async function getCurrentProfile(
-  supabase: SupabaseClient,
-): Promise<Profile> {
   const {
     data: { user },
-    error: authError,
+    error: userError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    throw unauthenticated();
+  if (userError || !user) {
+    return null;
   }
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select(
+      "id, auth_user_id, shelterluv_person_id, full_name, email, phone, role, created_at, updated_at",
+    )
     .eq("auth_user_id", user.id)
-    .maybeSingle<ProfileRow>();
+    .maybeSingle();
 
   if (error) {
-    throw error;
+    throw new Error(`Failed to get current profile: ${error.message}`);
   }
 
   if (!data) {
-    throw forbidden("No Pawster profile is linked to this account.");
+    return null;
   }
 
-  return mapProfile(data);
-}
+  const profile = data as ProfileRow;
 
-export function requireStaff(profile: Profile) {
-  if (!isStaff(profile)) {
-    throw forbidden("Only shelter staff can perform this action.");
-  }
+  return {
+    id: profile.id,
+    authUserId: profile.auth_user_id,
+    shelterluvPersonId: profile.shelterluv_person_id,
+    fullName: profile.full_name,
+    email: profile.email,
+    phone: profile.phone,
+    role: profile.role,
+    createdAt: profile.created_at,
+    updatedAt: profile.updated_at,
+  };
 }

@@ -1,3 +1,5 @@
+import type { WeeklyUpdateAnswersV1 } from "@/lib/weekly-updates/validation";
+
 export type Profile = {
   id: string;
   authUserId: string | null;
@@ -34,6 +36,15 @@ export type Placement = {
   updatedAt: string;
 };
 
+export type CreatePlacementInput = {
+  petId: string;
+  fosterId: string;
+  shelterluvPlacementId?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  status: string;
+};
+
 export type WeeklyUpdate = {
   id: string;
   placementId: string;
@@ -46,7 +57,14 @@ export type WeeklyUpdate = {
   submittedAt: string;
   reviewedAt: string | null;
   reviewedBy: string | null;
+  questionnaireVersion: number;
+  answers: WeeklyUpdateAnswers;
 };
+
+// The foster's original questionnaire answers. When a new questionnaire
+// version is added, include its answers type here (for example
+// WeeklyUpdateAnswersV1 | WeeklyUpdateAnswersV2).
+export type WeeklyUpdateAnswers = WeeklyUpdateAnswersV1;
 
 export type WeeklyUpdatePhoto = {
   id: string;
@@ -56,48 +74,74 @@ export type WeeklyUpdatePhoto = {
   createdAt: string;
 };
 
-export type ProfileRole = "foster" | "staff" | "admin";
+export type SupplyItem = {
+  id: string;
+  name: string;
+  category: string;
+  unitLabel: string;
+  createdAt: string;
+};
 
-// Request bodies
+export type SupplyRequestStatus = "pending" | "fulfilled" | "cancelled";
+
+export type FulfillmentMethod = "pickup" | "delivery";
+
+export type SupplyRequestItem = {
+  id: string;
+  requestId: string;
+  supplyItemId: string | null;
+  customName: string | null;
+  quantity: number;
+  supplyItem?: Pick<SupplyItem, "id" | "name" | "category" | "unitLabel"> | null;
+};
+
+export type SupplyRequest = {
+  id: string;
+  checkInId: string;
+  fosterId: string | null;
+  placementId: string | null;
+  status: SupplyRequestStatus;
+  fulfillmentMethod: FulfillmentMethod;
+  notesToStaff: string | null;
+  fulfilledAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: SupplyRequestItem[];
+};
+
+export type WeeklyCheckIn = {
+  id: string;
+  fosterId: string | null;
+  needsSupplies: boolean;
+  comments: string | null;
+  weekOf: string;
+  createdAt: string;
+};
 
 export type CreatePetRequest = {
+  shelterluvAnimalId?: string | null;
   name: string;
   species: string;
   breed?: string | null;
   photoUrl?: string | null;
-  status?: string;
-  shelterluvAnimalId?: string | null;
+  status: string;
 };
 
-export type CreatePlacementRequest = {
-  petId: string;
-  fosterId: string;
-  startDate: string;
-  endDate?: string | null;
-  status?: string;
-  shelterluvPlacementId?: string | null;
+export type GetPetsResponse = {
+  data: Pet[];
+};
+
+export type CreatePetResponse = {
+  data: Pet;
 };
 
 export type ClosePlacementRequest = {
-  endDate: string
-}
-
-export type EditPlacementRequest = {
-  endDate: string
-}
-
-export type CreateWeeklyUpdateRequest = {
-  placementId: string;
-  notes: string;
-  behaviorConcerns?: string | null;
-  medicalConcerns?: string | null;
-  needsSupplies?: boolean;
+  endDate: string;
 };
 
-// Response bodies
-
-export type ApiSuccessResponse<T> = {
-  data: T;
+export type EditPlacementRequest = {
+  endDate: string;
 };
 
 export type ApiErrorResponse = {
@@ -106,10 +150,3 @@ export type ApiErrorResponse = {
     details?: Record<string, string[]>;
   };
 };
-
-export type GetPetsResponse = ApiSuccessResponse<Pet[]>;
-export type CreatePetResponse = ApiSuccessResponse<Pet>;
-export type GetActivePlacementsResponse = ApiSuccessResponse<Placement[]>;
-export type CreatePlacementResponse = ApiSuccessResponse<Placement>;
-export type GetWeeklyUpdatesResponse = ApiSuccessResponse<WeeklyUpdate[]>;
-export type CreateWeeklyUpdateResponse = ApiSuccessResponse<WeeklyUpdate>;

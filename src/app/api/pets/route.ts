@@ -1,38 +1,62 @@
-import {
-  created,
-  errorResponse,
-  ok,
-  parseJsonBody,
-} from "@/lib/api/http";
-import { createPetSchema, parseWith } from "@/lib/api/validation";
-import { getCurrentProfile, requireStaff } from "@/lib/auth/get-current-profile";
 import { createPet } from "@/lib/pets/create-pet";
 import { getPets } from "@/lib/pets/get-pets";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createPetSchema } from "@/lib/pets/validation";
+import type { CreatePetResponse, GetPetsResponse } from "@/types";
 
 export async function GET() {
   try {
-    const supabase = await createSupabaseServerClient();
-    const profile = await getCurrentProfile(supabase);
-    const pets = await getPets(supabase, profile);
+    const pets = await getPets();
 
-    return ok(pets);
+    const response: GetPetsResponse = {
+      data: pets,
+    };
+
+    return Response.json(response, { status: 200 });
   } catch (error) {
-    return errorResponse(error);
+    console.error("Failed to get pets:", error);
+
+    return Response.json(
+      {
+        data: null,
+        message: "Failed to get pets.",
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createSupabaseServerClient();
-    const profile = await getCurrentProfile(supabase);
-    requireStaff(profile);
+    const body = await request.json();
 
-    const input = parseWith(createPetSchema, await parseJsonBody(request));
-    const pet = await createPet(supabase, input);
+    const result = createPetSchema.safeParse(body);
 
-    return created(pet);
+    if (!result.success) {
+      return Response.json(
+        {
+          data: null,
+          message: "Invalid pet data.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const pet = await createPet(result.data);
+
+    const response: CreatePetResponse = {
+      data: pet,
+    };
+
+    return Response.json(response, { status: 201 });
   } catch (error) {
-    return errorResponse(error);
+    console.error("Failed to create pet:", error);
+
+    return Response.json(
+      {
+        data: null,
+        message: "Failed to create pet.",
+      },
+      { status: 500 },
+    );
   }
 }

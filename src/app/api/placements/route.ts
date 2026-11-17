@@ -1,38 +1,65 @@
-import {
-  created,
-  errorResponse,
-  ok,
-  parseJsonBody,
-} from "@/lib/api/http";
-import { createPlacementSchema, parseWith } from "@/lib/api/validation";
-import { getCurrentProfile, requireStaff } from "@/lib/auth/get-current-profile";
 import { createPlacement } from "@/lib/placements/create-placement";
 import { getActivePlacements } from "@/lib/placements/get-active-placements";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export async function GET() {
   try {
-    const supabase = await createSupabaseServerClient();
-    const profile = await getCurrentProfile(supabase);
-    const placements = await getActivePlacements(supabase, profile);
+    const placements = await getActivePlacements();
 
-    return ok(placements);
+    return Response.json(
+      { data: placements },
+      { status: 200 },
+    );
   } catch (error) {
-    return errorResponse(error);
+    console.error("Failed to get placements:", error);
+
+    return Response.json(
+      {
+        data: null,
+        message: "Failed to get placements.",
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createSupabaseServerClient();
-    const profile = await getCurrentProfile(supabase);
-    requireStaff(profile);
+    const body = await request.json();
 
-    const input = parseWith(createPlacementSchema, await parseJsonBody(request));
-    const placement = await createPlacement(supabase, input);
+    const { petId, fosterId, startDate, status } = body;
 
-    return created(placement);
+    if (!petId || !fosterId || !startDate || !status) {
+      return Response.json(
+        {
+          data: null,
+          message: "petId, fosterId, startDate, and status are required.",
+        },
+        { status: 400 },
+      );
+    }
+
+    const placement = await createPlacement({
+      petId,
+      fosterId,
+      shelterluvPlacementId: body.shelterluvPlacementId,
+      startDate,
+      endDate: body.endDate,
+      status,
+    });
+
+    return Response.json(
+      { data: placement },
+      { status: 201 },
+    );
   } catch (error) {
-    return errorResponse(error);
+    console.error("Failed to create placement:", error);
+
+    return Response.json(
+      {
+        data: null,
+        message: "Failed to create placement.",
+      },
+      { status: 500 },
+    );
   }
 }
