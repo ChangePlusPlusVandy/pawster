@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { mapPlacement, type PlacementRow } from "@/lib/supabase/mappers";
 import type { EditPlacementRequest, Placement } from "@/types";
 import { getPlacement } from "@/lib/placements/get-placement";
-import { notFound } from "@/lib/api/http";
+import { conflict, notFound } from "@/lib/api/http";
 import { checkEditEndDate } from "@/lib/placements/placement-rules";
 import { todayInShelterTimeZone } from "@/lib/placements/today";
 
@@ -29,16 +29,23 @@ export async function editPlacement(
     return existing;
   }
 
-  // 3. Update only the end date and return result
+  // 3. Update only the end date and return result.
+  // Filtering on status = "closed" makes the write conditional: if the placement
+  // stopped being closed after we loaded it, no row matches and nothing is changed.
   const { data, error } = await supabase
     .from("placements")
-    .update({ end_date: input.endDate })
+    .update({ end_date: input.endDate, updated_at: new Date().toISOString() })
     .eq("id", placementId)
+    .eq("status", "closed")
     .select("*")
-    .single<PlacementRow>();
+    .maybeSingle<PlacementRow>();
 
   if (error) {
     throw error;
+  }
+
+  if (!data) {
+    throw conflict("Placement changed while editing. Reload and try again.");
   }
 
   return mapPlacement(data);
